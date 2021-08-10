@@ -42,7 +42,7 @@ newtype App s m e a = App
 
 Calling our `avg'` function from within `App` context is not straightforward as the `Either e` monad is not compatible with our `App` monad out of the box. We'll need to write a function that can lift a value of type `Either e a` to `App s m e a` type. Although writing such a function is possible, we can do better.
 
-Instead of coding pure functions to concrete types, we can code them to typeclasses. The typeclass that abstracts the functionality offered by `Either e` type is <code>MonadError e</code>. Let's redefine our average function so that it operates within <code>MonadError</code> context.
+Instead of coding pure functions to concrete types, we can code them to typeclasses. The typeclass that abstracts the functionality offered by `Either e` type is `MonadError e`. Let's redefine our average function so that it operates within `MonadError` context.
 
 ```haskell
 -- app.hs
@@ -51,11 +51,11 @@ avg [] = throwError "Cannot take average of empty list"
 avg xs = pure $ fromIntegral (sum xs) / fromIntegral (length xs)
 ```
 
-What did we change? Notice that we no longer return <code>Either String Double</code> anymore. Instead, we return a <code>Double</code> within a <code>MonadError String</code> context. This <code>MonadError String</code> context could be any <code>MonadError String</code> instance! Notice that our <code>App s m e</code> monad is an instance of <code>MonadError e</code> making it compatible with our new <code>avg</code> function when <code>e = String</code>
+What did we change? Notice that we no longer return `Either String Double` anymore. Instead, we return a `Double` within a `MonadError String` context. This `MonadError String` context could be any `MonadError String` instance! Notice that our `App s m e` monad is an instance of `MonadError e` making it compatible with our new `avg` function when `e = String`
 
-We have also replaced <code>Left</code> with <code>throwError</code> and <code>Right</code> with <code>pure</code>. For <code>Either e a</code> monad the functionality is exactly the same as before but now our function is more generic.
+We have also replaced `Left` with `throwError` and `Right` with `pure`. For `Either e a` monad the functionality is exactly the same as before but now our function is more generic.
 
-Let's confirm that <code>avg</code> function does indeed work within different <code>MonadError String</code> contexts.
+Let's confirm that `avg` function does indeed work within different `MonadError String` contexts.
 
 ```"haskell
 -- ghci
@@ -82,13 +82,13 @@ Enter an integer: -2
 Current avg: 1.0
 ```
 
-We will use <code>State [Int]</code> monad to store the current state of integers collected. So, our app will run in <code>App [Int] IO String</code> monadic context. Let's declare a type alias for this type for convenience.
+We will use `State [Int]` monad to store the current state of integers collected. So, our app will run in `App [Int] IO String` monadic context. Let's declare a type alias for this type for convenience.
 
 ```"haskell
 type MyApp = App [Int] IO String
 ```
 
-To run our <code>App s m e</code> monad, we will need to unwrap and run all its transformers one by one.
+To run our `App s m e` monad, we will need to unwrap and run all its transformers one by one.
 
 ```haskell
 -- app.hs
@@ -96,7 +96,7 @@ runapp :: Monad m => s -> App s m e a -> m (Either e a)
 runapp s = runExceptT . flip evalStateT s . unapp
 ```
 
-Now let's define a <code>readInt</code> function that will try to parse an integer from a string while handling any errors. For this we will use <code>readDec</code> function from <code>Numeric</code> module with some modifications.
+Now let's define a `readInt` function that will try to parse an integer from a string while handling any errors. For this we will use `readDec` function from `Numeric` module with some modifications.
 
 ```haskell
 -- app.hs
@@ -108,9 +108,9 @@ readInt xs       = case readDec xs of
   _         -> throwError $ "Could not parse " <> show xs <> " to an int"
 ```
 
-Note that we have defined <code>readInt</code> function within <code>MonadError String</code> context just like the <code>avg</code> function.
+Note that we have defined `readInt` function within `MonadError String` context just like the `avg` function.
 
-Next, we define a function <code>getInt</code> that will ask the user to input an integer, try to parse the input, and ask the user to input again if there was any error.
+Next, we define a function `getInt` that will ask the user to input an integer, try to parse the input, and ask the user to input again if there was any error.
 
 ```haskell
 -- app.hs
@@ -124,7 +124,7 @@ getInt :: MyApp Int
 getInt = getInt' `catchError` \e -> (liftIO . putStrLn $ e) *> getInt
 ```
 
-Note how we are able to call our pure <code>readInt</code> function from within <code>MyApp</code> monad without any lifting.
+Note how we are able to call our pure `readInt` function from within `MyApp` monad without any lifting.
 
 Alright, we have all the pieces we need. Now let's define a loop that would ask the user for input and display the current averages.
 
@@ -138,9 +138,9 @@ go = forever $ do
   liftIO $ putStrLn $ "Current avg: " <> show y
 ```
 
-Once again, we are able to call pure <code>avg</code> function from <code>MyApp</code> context without having to perform any lift juggling.
+Once again, we are able to call pure `avg` function from `MyApp` context without having to perform any lift juggling.
 
-And that's it. We can now call <code>go</code> from our <code>main</code> function to start the app.
+And that's it. We can now call `go` from our `main` function to start the app.
 
 ```haskell
 -- app.hs 
@@ -153,9 +153,9 @@ main = do
 ## Conclusion and follow-ups
 We saw today how pure functions can be made more generic so that they may be called from monadic contexts without much trouble.
 
-You might have noticed that <code>MonadError String</code> is not completely generic as it assumes the error type to be <code>String</code>. We cannot get rid of the concrete error type as we need it to create the error value.
+You might have noticed that `MonadError String` is not completely generic as it assumes the error type to be `String`. We cannot get rid of the concrete error type as we need it to create the error value.
 
-However, we can make our app monad an instance of <code>Bifunctor</code> to easily convert a value of type <code>App s m e a</code> to <code>App s m e' a</code>. The function that does this is called <a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html#v:first">first</a>. I will cover <a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html">Bifunctor</a> in detail in a separate blog post.
+However, we can make our app monad an instance of `Bifunctor` to easily convert a value of type `App s m e a` to `App s m e' a`. The function that does this is called <a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html#v:first">first</a>. I will cover <a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html">Bifunctor</a> in detail in a separate blog post.
 
 ## Appendix
 Complete program is reproduced below if you want to copy it. ;)
