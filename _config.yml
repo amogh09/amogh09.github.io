@@ -1,3 +1,5 @@
+title: fpunfold
+description: It's a programming blog dog
 plugins:
   - jekyll-relative-links
 relative_links:
