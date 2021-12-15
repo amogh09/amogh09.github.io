@@ -1,5 +1,9 @@
-![lego](https://fpunfold.com/wp-content/uploads/2020/05/lego-1599991_1280-300x169.jpg)
-
+---
+layout: post
+title:  "Algebraic Data Type"
+date:   2020-05-10 18:30:17 -0500
+categories: haskell functional-programming
+---
 Algebraic Data Type is a combination of one or more data types. Algebraic Data Types are categorized into two categories - Product Types and Sum Types. Algebraic Data Types are decomposed back into their components using pattern matching. They are used extensively in Functional Programming because of their pattern matching feature.
 
 Product Type is a type created by a composition of zero or more data types. It is called a Product Type as the number of possible values of this type is the product of the number of possible values of each of its component types. A tuple is an example of a Product Type. Composition of data types in Product Types is represented using an arbitrary Symbol called Data Constructor. Data constructors are used to perform pattern matching against Algebraic Data Types. In the following Product Type example, we define a `Person` data type that composes a `String` type (holding the person's name) and an `Int` type (holding the Person's age). The data constructor used to compose these two component types together is `Pers`.

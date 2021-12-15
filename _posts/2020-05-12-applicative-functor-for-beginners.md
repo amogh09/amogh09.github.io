@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "Applicative Functor for beginners"
+date:   2020-05-12 18:30:17 -0500
+categories: haskell functional-programming
+---
 *This article presumes beginner level knowledge of Haskell programming language on part of the reader. To get the most out of this article some knowledge of basic Haskell syntax, basic data types like Maybe and Either, and Functor typeclass will be highly beneficial.*
 
 ![unfold](https://fpunfold.com/wp-content/uploads/2020/05/haskell_unfold.001-300x176.jpeg)

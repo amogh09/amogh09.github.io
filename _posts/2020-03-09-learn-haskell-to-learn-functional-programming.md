@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "Learn Haskell to learn Functional Programming"
+date:   2020-03-09 18:30:17 -0500
+categories: haskell functional-programming
+---
 ![Haskell](https://fpunfold.com/wp-content/uploads/2020/05/haskell.001-300x100.jpeg)
 
 Haskell is a great language. It pioneers functional programming and enforces it. If you want to learn functional programming you should seriously consider learning it through Haskell. Let's go through some of Haskell's features to see what makes it special.
@@ -54,7 +60,7 @@ impureAdd x y = do
     return (x + y)
 ```
 
-```haskell
+```
 -- ghci (Haskell shell)
 λ> :l whyhaskell.hs 
 [1 of 1] Compiling Main             ( whyhaskell.hs, interpreted )
@@ -88,7 +94,8 @@ sayGreeting greeting name = greeting ++ " " ++ name ++ "!"
 -- Now we define three new functions with different greetings
 sayHello = sayGreeting "Hello"
 sayHi = sayGreeting "Hi"
-sayYo = sayGreeting "Yo"```
+sayYo = sayGreeting "Yo"
+```
 
 ```
 -- ghci (Haskell shell)

@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "Pure functions and Monads"
+date:   2020-06-08 18:30:17 -0500
+categories: haskell functional-programming
+---
 In today's article I'll be showing you a way to write pure functions that are Monad-friendly meaning that they are composable with Monadic contexts.
 
 ## Imports and Extensions

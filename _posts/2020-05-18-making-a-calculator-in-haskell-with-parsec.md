@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "Making a Calculator in Haskell with Parsec"
+date:   2020-05-18 18:30:17 -0500
+categories: haskell functional-programming
+---
 ![Calculator](https://fpunfold.com/wp-content/uploads/2020/05/calculator.001.jpeg)
 
 In this article, I will show you how to use [Parsec](https://wiki.haskell.org/Parsec) in an Applicative style to parse and evaluate simple expressions. We will make a Calculator in Haskell with Parsec library. Our calculator will support addition, subtraction, multiplication, division, and parentheses with their respective precedences. This article is aimed at showing the power of Parsec and Parsec-like libraries and the elegance of Applicative programming. Read our introductory piece on <a href="https://fpunfold.com/2020/05/12/applicative-functor-for-beginners/">Applicatives</a> for more information on Applicative Functors.
