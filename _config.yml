@@ -28,7 +28,7 @@ twitter_username: RathoreAmogh
 github_username:  amogh09
 
 # Build settings
-theme: jekyll-theme-slate
+theme: minima
 plugins:
   - jekyll-feed
 
