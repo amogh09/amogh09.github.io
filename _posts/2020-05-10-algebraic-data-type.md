@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "Algebraic Data Type"
-date:   2020-05-10 18:30:17 -0500
-categories: haskell functional-programming
+title: Algebraic Data Type
+date: 2020-05-10
+tags: haskell functional-programming
 ---
 Algebraic Data Type is a combination of one or more data types. Algebraic Data Types are categorized into two categories - Product Types and Sum Types. Algebraic Data Types are decomposed back into their components using pattern matching. They are used extensively in Functional Programming because of their pattern matching feature.
 

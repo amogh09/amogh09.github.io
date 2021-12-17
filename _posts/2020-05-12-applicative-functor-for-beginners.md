@@ -1,18 +1,16 @@
 ---
 layout: post
-title:  "Applicative Functor for beginners"
-date:   2020-05-12 18:30:17 -0500
-categories: haskell functional-programming
+title: Applicative Functor for beginners
+date: 2020-05-12
+tags: haskell functional-programming
 ---
 *This article presumes beginner level knowledge of Haskell programming language on part of the reader. To get the most out of this article some knowledge of basic Haskell syntax, basic data types like Maybe and Either, and Functor typeclass will be highly beneficial.*
-
-![unfold](https://fpunfold.com/wp-content/uploads/2020/05/haskell_unfold.001-300x176.jpeg)
 
 ## What this post covers?
 After reading this post you'll have a basic understanding of Applicative Functors. You'll also see some relatable real-life problems where Applicative Functors can come in handy and yield an elegant solution.
 
 ## Applicative Functor
-In an earlier article I explained about [Functors](https://fpunfold.com/2020/05/08/functor/). A quick refresher is that a Functor is a container or a context whose value(s) could be mapped over with a function to produce a new Functor. This is done using the `fmap` function. Haskell defines the following typeclass for Functors.
+In an earlier article I explained about [Functors]({% post_url 2020-06-08-pure-functions-and-monads %}). A quick refresher is that a Functor is a container or a context whose value(s) could be mapped over with a function to produce a new Functor. This is done using the `fmap` function. Haskell defines the following typeclass for Functors.
 
 ```haskell
 class Functor f where
