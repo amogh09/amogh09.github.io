@@ -36,16 +36,40 @@ To setup the LL Node, we use the following command to start a Socat process.
 $ socat -d -d -d tcp-l:8000,reuseaddr,fork tcp-l:8001,reuseaddr
 ```
 
-The command above tells Socat to first listen for client connections on port 8000 and then on port 8001. Port 8000 is for external clients whereas port 8001 is for the CC Node.
+The command above tells Socat to first listen for client connections on port 8000 and then on port 8001. Port 8000 is for external clients whereas port 8001 is for the CC Node. The `fork` option when listening on port `8000` will make Socat spawn a new child process for listening on port `8001` each time it accepts a connection from external client on port `8000`. This way we will be able to handle an arbitrary number of clients.
 
 #### CC Node
 We start a CC Node using the following Socat command. Here we assume that the server is listening for connections on port 7200.
 
 ```bash
-$ socat -d -d -d tcp:<LL-node-address>:8001,forever,intervall=2,fork tcp:<server-address>:7200
+$ socat -d -d -d tcp:<LL-node-address>:8001,forever,interval=2,fork tcp:<server-address>:7200
 ```
 
 This command tells socat to first establish a connection to the LL Node on port 8001 and then establish a connection to the server on port 7200. 
 
 Since, the LL Node is configured to accept a client connection before listening for a connection from the CC Node, connection attempts from CC Node to LL Node will fail until the latter receives a client connection. For this reason we tell the CC Node Socat to retry connection attempts to LL Node forever with a sensible interval between attempts (2 seconds in the example above). Only when a connection attempt to LL Node succeeds will the CC Node connect to the Server.
 
+#### In action 
+Let's test if the above setup works as expected. For simplicity of our test we wil run both LL and CC nodes as well as the server locally. 
+
+**Server**
+
+For the server I am going to use the default Python HTTP Server from `http.server` module. This server serves static files in the current directory.
+
+```bash 
+$ python3 -m http.server 7200
+```
+
+**LL Node**
+```bash
+$ socat -d -d -d tcp-l:8000,reuseaddr,fork tcp-l:8001,reuseaddr
+```
+
+**CC Node** 
+```bash
+$ socat -d -d -d tcp:127.0.0.1:8001,forever,interval=2,fork tcp:127.0.0.1:7200
+```
+
+Now, if you open `localhost:8000` in your web browser you will see the HTTP Server return a result containing all the files in its current directory.
+
+![Server result](/assets/tcp-gender-changer/server-result.png)
