@@ -8,7 +8,7 @@ tags: haskell algorithms dynamic-programming
 
 In today's post we'll see how Dynamic Programming algorithms can be implemented in Haskell in an idiomatic way. 
 
-The usual way to implement a Dynamic Programming algorithms in a traditional programming langugage is to initialize a mutable empty array and fill its items one-by-one while reusing older entries. This appraoch is not very compatible with Haskell because the standard data structures in Haskell are immutable by default. However, as we will see soon, laziness of Haskell data structures comes in really handy for implementing Dynamic Programming algorithms and the end result is really neat.
+The usual way to implement a Dynamic Programming algorithms in a traditional programming langugage is to initialize a mutable empty array and fill its items one-by-one while reusing older entries. This approach is not very compatible with Haskell because the standard data structures in Haskell are immutable by default. However, as we will see soon, laziness of Haskell data structures comes in really handy for implementing Dynamic Programming algorithms and the end result is really neat.
 
 Let's look at a few Dynamic Programming problems and solve them using Haskell.
 
