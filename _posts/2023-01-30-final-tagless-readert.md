@@ -16,7 +16,7 @@ The patterns I describe in this post are inspired from [The ReaderT Design Patte
 Dependency injection is a well known pattern in Object Oriented programming. The idea is to "program to interfaces" and inject implementations of interfaces during initialization. This pattern is very well understood and we will be implementing this pattern in Haskell using Tagless-Final and ReaderT patterns.
 
 ## Tagless-Final pattern
-Tagless-Final pattern suggests programming to typeclass constraints instead of concrete dependencies. It is basically the Haskell version of programming to interfaces.
+Tagless-Final pattern suggests programming to typeclass constraints instead of concrete types. It is basically the Haskell version of programming to interfaces.
 
 Say we want to write a function to download a wallpaper from the Internet and save it to local disk.
 
