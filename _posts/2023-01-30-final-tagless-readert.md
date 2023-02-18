@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Building real-world Haskell applications using final-tagless and ReaderT
+title: Building real-world Haskell applications using Tagless-Final and ReaderT
 date: 2023-01-30
 tags: haskell real-world architecture final-tagless readert
 ---
@@ -13,10 +13,10 @@ I have been learning and playing with Haskell on-and-off for a couple of years n
 The patterns I describe in this post are inspired from [The ReaderT Design Pattern](https://www.fpcomplete.com/blog/2017/06/readert-design-pattern/) and [Three Layer Haskell Cake](https://www.parsonsmatt.org/2018/03/22/three_layer_haskell_cake.html) articles.
 
 # How does the OO world do it?
-Dependency injection is a well known pattern in Object Oriented programming. The idea is to "program to interfaces" and inject implementations of interfaces during initialization. This pattern is very well understood and we will be implementing this pattern in Haskell using final-tagless and ReaderT patterns.
+Dependency injection is a well known pattern in Object Oriented programming. The idea is to "program to interfaces" and inject implementations of interfaces during initialization. This pattern is very well understood and we will be implementing this pattern in Haskell using Tagless-Final and ReaderT patterns.
 
-# Final-tagless pattern
-Final-tagless pattern suggests programming to typeclass constraints instead of concrete dependencies. It is basically the Haskell version of programming to interfaces. 
+# Tagless-Final pattern
+Tagless-Final pattern suggests programming to typeclass constraints instead of concrete dependencies. It is basically the Haskell version of programming to interfaces.
 
 Say we want to write a function to download a wallpaper from the Internet and save it to local disk.
 
@@ -36,9 +36,9 @@ downloadWallpaper dir name url = do
   BS.writeFile path (HTTP.getResponseBody wallpaper) -- save the wallpaper
 ```
 
-This function is tightly coupled to `httpBS` and `writeFile`. If, instead of saving the wallpaper to the disk, we wanted to save it to a database, then we would need to write a new function entirely. 
+This function is tightly coupled to `httpBS` and `writeFile`. If, instead of saving the wallpaper to the disk, we wanted to save it to a database, then we would need to write a new function entirely.
 
-With the final-tagless pattern we can make this function more flexible. The idea is to write typeclasses that export actions and program high-level functions to the methods of the typeclasses.
+With the Tagless-Final pattern we can make this function more flexible. The idea is to write typeclasses that export actions and program high-level functions to the methods of the typeclasses.
 
 ```haskell
 {-# LANGUAGE FlexibleInstances #-}
@@ -70,7 +70,7 @@ class Monad m => MonadSaveWallpaper m where
 Now we can provide different instances for the typeclasses to get different effects from the same function. Note that the new `downloadWallpaper` function no longer has a directory parameter. It is now more high-level and is agnostic to low-level details of wallpaper saving.
 
 # ReaderT pattern
-Note that a single type is required to implement all typeclasses we introduce with the final-tagless pattern. With the ReaderT pattern, the type we choose to implement the typeclasses is `ReaderT Env IO`. `Env` will usually be a record type containing all configuration, state, and resources needed by our application.
+Note that a single type is required to implement all typeclasses we introduce with the Tagless-Final pattern. With the ReaderT pattern, the type we choose to implement the typeclasses is `ReaderT Env IO`. `Env` will usually be a record type containing all configuration, state, and resources needed by our application.
 
 For our running example, we'd need a directory to save the wallpapers. Let's create a record type `Env` that will contain a wallpaper directory as configuration and make `MonadIO m => ReaderT Env m` implement the two typeclasses.
 
@@ -148,7 +148,7 @@ runTest = hspec $ do
 ```
 
 # Has typeclasses
-High-level application functions might also need access to configuration or state data. A Has typeclass is a pattern that allows extracting out some value from application's environment. Has typeclasses export a single method that returns the desired value. For example, if our application has a debug mode flag then we could write a `HasDebugMode` typeclass that exports a method to get the debug mode value. 
+High-level application functions might also need access to configuration or state data. A Has typeclass is a pattern that allows extracting out some value from application's environment. Has typeclasses export a single method that returns the desired value. For example, if our application has a debug mode flag then we could write a `HasDebugMode` typeclass that exports a method to get the debug mode value.
 
 ```haskell
 class HasDebugMode env where
@@ -173,7 +173,7 @@ Functions that need access to the debug mode flag should add the `HasDebugMode e
 downloadWallpaper ::
   ( MonadReader env m,
     HasDebugMode env,
-    MonadGetWallpaper m, 
+    MonadGetWallpaper m,
     MonadSaveWallpaper m,
     MonadIO m -- for priting debug logs
   ) =>
@@ -187,10 +187,10 @@ downloadWallpaper name url = do
   saveWallpaper name wallpaper
 ```
 
-So, the idea is to use final-tagless and ReaderT patterns together. These two patterns help us structure our applications in a modular fashion. High-level and low-level details of the application are well separated and loosely coupled through the typeclasses.
+So, the idea is to use Tagless-Final and ReaderT patterns together. These two patterns help us structure our applications in a modular fashion. High-level and low-level details of the application are well separated and loosely coupled through the typeclasses.
 
 # Three layers + Environment
-Another pattern that I found useful is to structure applications with three layers aka the three-layer cake. Layer-1 depends on Layer-2 which in-turn depends on Layer-3. 
+Another pattern that I found useful is to structure applications with three layers aka the three-layer cake. Layer-1 depends on Layer-2 which in-turn depends on Layer-3.
 
 ## Layer 1
 This layer is concerned about the high-level flow of the application. All functions in this layer are high-level and program to typeclasses. If the functions need access to specific configuration data then a `Has` typeclass should be added as a constraint. If the functions need a specific side-effect such as downloading some data then an appropriate typeclass constraint that exports the side-effect should be added to it. In our example from above, the `downloadWallpaper` function belongs to Layer-1.
@@ -211,7 +211,7 @@ Now let's tackle the unpleasant yet necessary part of any real-world application
 
 First, I recommend throwing exceptions in real-world Haskell applications when an IO action fails. When I was new to Haskell I saw beautiful monads such as `Either` and `Expect` that seemed to make all error handling explicit but also elegant. I naively believed that I wouldn't have to deal with runtime exceptions ever and that Haskell is the best language. I do agree with the latter part, however, later I realized that Haskell does not have any magic for dealing with runtime exceptions and they are a fact of life in the Haskell world. See [this post from FP Complete](https://www.fpcomplete.com/blog/2016/11/exceptions-best-practices-haskell/) that explains why throwing exceptions is better than attempting to capture all possible exceptional cases in function types.
 
-`saveWallpaperToDisk` Layer-3 function in our example can fail with an exception due to a lack of write permissions to the directory. In that case, there is nothing that this function can do and must let the exception propogate upwards. From Layer 1's perspective, the wallpaper failed to save, it is not concerened with the cause that is the lack of permissions, it is not even aware that the wallpaper is being saved to a file. To catch exceptions at Layer 1, let's create a sum type that captures everything that can go wrong. Typically, you will have one exception data constructor per monadic action in your Layer-2 typeclasses. 
+`saveWallpaperToDisk` Layer-3 function in our example can fail with an exception due to a lack of write permissions to the directory. In that case, there is nothing that this function can do and must let the exception propogate upwards. From Layer 1's perspective, the wallpaper failed to save, it is not concerened with the cause that is the lack of permissions, it is not even aware that the wallpaper is being saved to a file. To catch exceptions at Layer 1, let's create a sum type that captures everything that can go wrong. Typically, you will have one exception data constructor per monadic action in your Layer-2 typeclasses.
 
 ```haskell
 data AppException
@@ -232,12 +232,12 @@ instance MonadIO m => MonadSaveWallpaper (ReaderT Env m) where
     dir <- asks wallpaperDir
     saveWallpaperToDiskExcept dir name wallpaper -- use the new function
 
-saveWallpaperToDiskExcept :: 
+saveWallpaperToDiskExcept ::
   MonadIO m => FilePath -> WallpaperName -> ByteString -> m ()
 saveWallpaperToDiskExcept dir name wallpaper =
   liftIO $
-    catch 
-      (saveWallpaperToDisk dir name wallpaper) 
+    catch
+      (saveWallpaperToDisk dir name wallpaper)
       (throwIO . handleIOError dir) -- map the IO exception to AppException
 
 handleIOError :: FilePath -> IOError -> AppException
@@ -281,9 +281,9 @@ Failed to save wallpaper: no permission to save wallpaper to "/"
 ```
 
 ## Pure errors
-Exceptions are unavoidable for impure code and it's better to embrace them than fight them. However, for pure code, I advise using `Either` or `Except` monads or a `MonadThrow` instance. 
+Exceptions are unavoidable for impure code and it's better to embrace them than fight them. However, for pure code, I advise using `Either` or `Except` monads or a `MonadThrow` instance.
 
 When propogating a Layer-3 pure error from an impure Layer-2 function to a Layer-1 function, however, you are probably better off mapping the pure error to a Layer-1 exception and throwing it. This is because the impure Layer-2 function would already have exception throwing in its contract, so having a single way (throwing exceptions) of signaling failure is better than having two ways.
 
 # Summary
-That is all I have for this post. The application that inspired this post is [wallhaven-sync](https://github.com/amogh09/wallhaven-sync) that is a CLI for syncing wallpapers from [Wallhaven](https://wallhaven.cc/) website to my computer. Check it out! Final-tagless, ReaderT, Has typeclasses, and embracing exceptions have all helped me write a Haskell application that I am somewhat satisfied with. In the future I plan to explore Free monads to achieve similar or better results!
+That is all I have for this post. The application that inspired this post is [wallhaven-sync](https://github.com/amogh09/wallhaven-sync) that is a CLI for syncing wallpapers from [Wallhaven](https://wallhaven.cc/) website to my computer. Check it out! Tagless-Final, ReaderT, Has typeclasses, and embracing exceptions have all helped me write a Haskell application that I am somewhat satisfied with. In the future I plan to explore Free monads to achieve similar or better results!
