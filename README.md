@@ -1,2 +1,2 @@
-# fpunfold
-This is the source of [fpunfold.com](https://fpunfold.com)!
+# amogh09.github.io
+This is the source of my programming blog at [amogh09.github.io](amogh09.github.io)!
