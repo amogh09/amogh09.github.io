@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2021-12-16" />
+  <title>TCP Gender Changer with Socat</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">TCP Gender Changer with Socat</h1>
+<p class="date">2021-12-16</p>
+</header>
+<p>In today’s post we will be talking about Gender Changing. Huh? Gender
+Changing? Is this still a programming blog? Yes, it is. We’ll be looking
+at TCP Gender Changer today along with a simple Socat based
+implementation of it.</p>
+<h1 id="problem">Problem</h1>
+<p>You have a server running inside a zone protected by a firewall that
+needs to be accessed by clients from outside the firewall. The server
+must run inside the protected zone and it cannot directly accept inbound
+connections from outside. This is a common situation for non-public
+facing sensitive systems such as those used by Finance companies for
+accepting connections from other companies.</p>
+<h1 id="solution---tcp-gender-changer">Solution - TCP Gender
+Changer</h1>
+<p>One of the solutions to this problem is a mechanism known as TCP
+Gender Changer. You can read about it in more detail on <a
+href="https://en.wikipedia.org/wiki/TCP_Gender_Changer">Wikipedia</a>
+but the basic idea is to have a process inside the Firewall initiating
+connections to another process outside the Firewall and also to the
+Server. The process outside the Firewall is responsible for accepting
+inbound client connections and then relaying them to outbound
+connections it received from the other process inside the Firewall. I
+know it’s a bit confusing so let’s break down the mechanism into
+steps.</p>
+<h1 id="step-by-step-mechanism">Step-by-step mechanism</h1>
+<ol type="1">
+<li>A process is started on a host outside the Firewall. This process is
+called a Listen-Listen or LL node.</li>
+<li>A process is started on a host inside the Firewall. This process is
+called a Connect-Connect or CC node.</li>
+<li>The LL node listens for connections from external clients as well as
+for connections from CC node, that’s why it’s called Listen-Listen.</li>
+<li>The CC node establishes a connection to the LL node and waits for a
+signal from it about a new client connection.</li>
+<li>An external client connects to the LL node. LL node sends a signal
+to the CC node on its pre-established connection.</li>
+<li>The CC node receives the signal about new client connection and
+initiates a new connection to the server.</li>
+<li>Server accepts the connection from CC node.</li>
+<li>LL node and CC node together form a relay between the Client and the
+Server. Data transfer can now occur freely between the Client and the
+Server.</li>
+</ol>
+<h1 id="implementation-with-socat">Implementation with Socat</h1>
+<p>We can implement a simple TCP Gender Changer using the <a
+href="https://linux.die.net/man/1/socat">Socat</a> utility for Unix
+based systems. Quoting from the Socat manual, Socat is a command line
+based utility that establishes two bidirectional byte streams and
+transfers data between them.</p>
+<h4 id="ll-node">LL Node</h4>
+<p>To setup the LL Node, we use the following command to start a Socat
+process.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> socat <span class="at">-d</span> <span class="at">-d</span> <span class="at">-d</span> tcp-l:8000,reuseaddr,fork tcp-l:8001,reuseaddr</span></code></pre></div>
+<p>The command above tells Socat to first listen for client connections
+on port 8000 and then on port 8001. Port 8000 is for external clients
+whereas port 8001 is for the CC Node. The <code>fork</code> option when
+listening on port <code>8000</code> will make Socat spawn a new child
+process for listening on port <code>8001</code> each time it accepts a
+connection from external client on port <code>8000</code>. This way we
+will be able to handle an arbitrary number of clients.</p>
+<h4 id="cc-node">CC Node</h4>
+<p>We start a CC Node using the following Socat command. Here we assume
+that the server is listening for connections on port 7200.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> socat <span class="at">-d</span> <span class="at">-d</span> <span class="at">-d</span> tcp:<span class="op">&lt;</span>LL-node-address<span class="op">&gt;</span>:8001,forever,interval=2,fork tcp:<span class="op">&lt;</span>server-address<span class="op">&gt;</span>:7200</span></code></pre></div>
+<p>This command tells socat to first establish a connection to the LL
+Node on port 8001 and then establish a connection to the server on port
+7200.</p>
+<p>Since, the LL Node is configured to accept a client connection before
+listening for a connection from the CC Node, connection attempts from CC
+Node to LL Node will fail until the latter receives a client connection.
+For this reason we tell the CC Node Socat to retry connection attempts
+to LL Node forever with a sensible interval between attempts (2 seconds
+in the example above). Only when a connection attempt to LL Node
+succeeds will the CC Node connect to the Server.</p>
+<h4 id="in-action">In action</h4>
+<p>Let’s test if the above setup works as expected. For simplicity of
+our test we wil run both LL and CC nodes as well as the server
+locally.</p>
+<p><strong>Server</strong></p>
+<p>For the server I am going to use the default Python HTTP Server from
+<code>http.server</code> module. This server serves static files in the
+current directory.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> python3 <span class="at">-m</span> http.server 7200</span></code></pre></div>
+<p><strong>LL Node</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> socat <span class="at">-d</span> <span class="at">-d</span> <span class="at">-d</span> tcp-l:8000,reuseaddr,fork tcp-l:8001,reuseaddr</span></code></pre></div>
+<p><strong>CC Node</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> socat <span class="at">-d</span> <span class="at">-d</span> <span class="at">-d</span> tcp:127.0.0.1:8001,forever,interval=2,fork tcp:127.0.0.1:7200</span></code></pre></div>
+<p>Now, if you open <code>localhost:8000</code> in your web browser you
+will see the HTTP Server return a result containing all the files in its
+current directory.</p>
+</body>
+</html>

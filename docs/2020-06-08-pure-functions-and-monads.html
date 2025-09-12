@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2020-06-08" />
+  <title>Pure functions and Monads</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Pure functions and Monads</h1>
+<p class="date">2020-06-08</p>
+</header>
+<p>In today’s article I’ll be showing you a way to write pure functions
+that are Monad-friendly meaning that they are composable with Monadic
+contexts.</p>
+<h2 id="imports-and-extensions">Imports and Extensions</h2>
+<p>Let’s first get the imports and language extensions we’d be using for
+this article out of the way.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleContexts           #-}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad</span>          (forever)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.Except</span>   (<span class="dt">ExceptT</span>, <span class="dt">MonadError</span>, catchError,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                                         runExceptT, throwError)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.IO.Class</span> (<span class="dt">MonadIO</span>, liftIO)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.State</span>    (<span class="dt">MonadState</span>, <span class="dt">StateT</span>, evalStateT, get,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                                         modify)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Numeric</span>                (readDec)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">System.IO</span>              (<span class="dt">BufferMode</span> (<span class="dt">NoBuffering</span>),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                                         hSetBuffering, stdout)</span></code></pre></div>
+<p>Cool. We can get started now!</p>
+<h2 id="pure-functions-and-monads">Pure functions and Monads</h2>
+<p>Say you want to write a pure function that has a possibility of
+failing. What type signature would you give it? One of the common ones
+is <code>Either String a</code>. For example, let’s write a function
+that given a list of integers returns their average.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">avg&#39; ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">Double</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>avg&#39; [] <span class="ot">=</span> <span class="dt">Left</span> <span class="st">&quot;Cannot take average of empty list&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>avg&#39; xs <span class="ot">=</span> <span class="dt">Right</span> <span class="op">$</span> <span class="fu">fromIntegral</span> (<span class="fu">sum</span> xs) <span class="op">/</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> xs)</span></code></pre></div>
+<p>Functions with concrete return types such as
+<code>Either String a</code> are not directly compatible with Monadic
+contexts other than <code>Either String</code>. Suppose we have an
+<code>App</code> monad for our application defined as follows.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">App</span> s m e a <span class="ot">=</span> <span class="dt">App</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unapp ::</span> <span class="dt">StateT</span> s (<span class="dt">ExceptT</span> e m) a</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadError</span> e, <span class="dt">MonadIO</span>, <span class="dt">MonadState</span> s)</span></code></pre></div>
+<p>Calling our <code>avg'</code> function from within <code>App</code>
+context is not straightforward as the <code>Either e</code> monad is not
+compatible with our <code>App</code> monad out of the box. We’ll need to
+write a function that can lift a value of type <code>Either e a</code>
+to <code>App s m e a</code> type. Although writing such a function is
+possible, we can do better.</p>
+<p>Instead of coding pure functions to concrete types, we can code them
+to typeclasses. The typeclass that abstracts the functionality offered
+by <code>Either e</code> type is <code>MonadError e</code>. Let’s
+redefine our average function so that it operates within
+<code>MonadError</code> context.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">avg ::</span> <span class="dt">MonadError</span> <span class="dt">String</span> m <span class="ot">=&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> m <span class="dt">Double</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>avg [] <span class="ot">=</span> throwError <span class="st">&quot;Cannot take average of empty list&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>avg xs <span class="ot">=</span> <span class="fu">pure</span> <span class="op">$</span> <span class="fu">fromIntegral</span> (<span class="fu">sum</span> xs) <span class="op">/</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> xs)</span></code></pre></div>
+<p>What did we change? Notice that we no longer return
+<code>Either String Double</code> anymore. Instead, we return a
+<code>Double</code> within a <code>MonadError String</code> context.
+This <code>MonadError String</code> context could be any
+<code>MonadError String</code> instance! Notice that our
+<code>App s m e</code> monad is an instance of <code>MonadError e</code>
+making it compatible with our new <code>avg</code> function when
+<code>e = String</code></p>
+<p>We have also replaced <code>Left</code> with <code>throwError</code>
+and <code>Right</code> with <code>pure</code>. For
+<code>Either e a</code> monad the functionality is exactly the same as
+before but now our function is more generic.</p>
+<p>Let’s confirm that <code>avg</code> function does indeed work within
+different <code>MonadError String</code> contexts.</p>
+<pre class="&quot;haskell"><code>-- ghci
+λ&gt; avg [1,2,3] :: Either String Double
+Right 2.0
+λ&gt; let x = avg [1,2,3] :: Monad m =&gt; App s m String Double
+λ&gt; :t x
+x :: Monad m =&gt; App s m String Double</code></pre>
+<p>Nice.</p>
+<h2 id="applying-the-knowledge">Applying the knowledge</h2>
+<p>Let’s now write a simple application that would demonstrate the
+usefulness of Monad compatible pure functions. We will write a console
+app to print online averages of integers. The app will continuously keep
+asking the user for integer values and print the average of all values
+collected until now after each integer is read.</p>
+<pre><code>Enter an integer: 5
+Current avg: 5.0
+Enter an integer: 0
+Current avg: 2.5
+Enter an integer: abc
+Could not parse &quot;abc&quot; to an int
+Enter an integer: -2
+Current avg: 1.0</code></pre>
+<p>We will use <code>State [Int]</code> monad to store the current state
+of integers collected. So, our app will run in
+<code>App [Int] IO String</code> monadic context. Let’s declare a type
+alias for this type for convenience.</p>
+<pre class="&quot;haskell"><code>type MyApp = App [Int] IO String</code></pre>
+<p>To run our <code>App s m e</code> monad, we will need to unwrap and
+run all its transformers one by one.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ot">runapp ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> s <span class="ot">-&gt;</span> <span class="dt">App</span> s m e a <span class="ot">-&gt;</span> m (<span class="dt">Either</span> e a)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>runapp s <span class="ot">=</span> runExceptT <span class="op">.</span> <span class="fu">flip</span> evalStateT s <span class="op">.</span> unapp</span></code></pre></div>
+<p>Now let’s define a <code>readInt</code> function that will try to
+parse an integer from a string while handling any errors. For this we
+will use <code>readDec</code> function from <code>Numeric</code> module
+with some modifications.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span><span class="ot"> ::</span> <span class="dt">MonadError</span> <span class="dt">String</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> []       <span class="ot">=</span> throwError <span class="st">&quot;Cannot read int from empty string&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> (<span class="ch">&#39;-&#39;</span><span class="op">:</span>xs) <span class="ot">=</span> <span class="fu">negate</span> <span class="op">&lt;$&gt;</span> <span class="fu">readInt</span> xs <span class="co">-- Handle negative integers</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> xs       <span class="ot">=</span> <span class="kw">case</span> <span class="fu">readDec</span> xs <span class="kw">of</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  [(v, <span class="st">&quot;&quot;</span>)] <span class="ot">-&gt;</span> <span class="fu">pure</span> v</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  _         <span class="ot">-&gt;</span> throwError <span class="op">$</span> <span class="st">&quot;Could not parse &quot;</span> <span class="op">&lt;&gt;</span> <span class="fu">show</span> xs <span class="op">&lt;&gt;</span> <span class="st">&quot; to an int&quot;</span></span></code></pre></div>
+<p>Note that we have defined <code>readInt</code> function within
+<code>MonadError String</code> context just like the <code>avg</code>
+function.</p>
+<p>Next, we define a function <code>getInt</code> that will ask the user
+to input an integer, try to parse the input, and ask the user to input
+again if there was any error.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">getInt&#39; ::</span> <span class="dt">MyApp</span> <span class="dt">Int</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>getInt&#39; <span class="ot">=</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      liftIO (<span class="fu">putStr</span> <span class="st">&quot;Enter an integer: &quot;</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">*&gt;</span>  liftIO <span class="fu">getLine</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;&gt;=</span> <span class="fu">readInt</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ot">getInt ::</span> <span class="dt">MyApp</span> <span class="dt">Int</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>getInt <span class="ot">=</span> getInt&#39; <span class="ot">`catchError`</span> \e <span class="ot">-&gt;</span> (liftIO <span class="op">.</span> <span class="fu">putStrLn</span> <span class="op">$</span> e) <span class="op">*&gt;</span> getInt</span></code></pre></div>
+<p>Note how we are able to call our pure <code>readInt</code> function
+from within <code>MyApp</code> monad without any lifting.</p>
+<p>Alright, we have all the pieces we need. Now let’s define a loop that
+would ask the user for input and display the current averages.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ot">go ::</span> <span class="dt">MyApp</span> ()</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>go <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> getInt       <span class="co">-- get int from user</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  modify (x<span class="op">:</span>)       <span class="co">-- prepend new int to our state</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> avg <span class="op">=&lt;&lt;</span> get  <span class="co">-- compute the average of collected ints</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  liftIO <span class="op">$</span> <span class="fu">putStrLn</span> <span class="op">$</span> <span class="st">&quot;Current avg: &quot;</span> <span class="op">&lt;&gt;</span> <span class="fu">show</span> y</span></code></pre></div>
+<p>Once again, we are able to call pure <code>avg</code> function from
+<code>MyApp</code> context without having to perform any lift
+juggling.</p>
+<p>And that’s it. We can now call <code>go</code> from our
+<code>main</code> function to start the app.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs </span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  hSetBuffering stdout <span class="dt">NoBuffering</span> <span class="co">-- so that everything is printed right away</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  runapp [] go <span class="op">&gt;&gt;=</span> <span class="fu">either</span> <span class="fu">print</span> (<span class="fu">const</span> <span class="op">$</span> <span class="fu">pure</span> ())</span></code></pre></div>
+<h2 id="conclusion-and-follow-ups">Conclusion and follow-ups</h2>
+<p>We saw today how pure functions can be made more generic so that they
+may be called from monadic contexts without much trouble.</p>
+<p>You might have noticed that <code>MonadError String</code> is not
+completely generic as it assumes the error type to be
+<code>String</code>. We cannot get rid of the concrete error type as we
+need it to create the error value.</p>
+<p>However, we can make our app monad an instance of
+<code>Bifunctor</code> to easily convert a value of type
+<code>App s m e a</code> to <code>App s m e' a</code>. The function that
+does this is called
+<a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html#v:first">first</a>.
+I will cover
+<a href="https://hackage.haskell.org/package/base-4.14.0.0/docs/Data-Bifunctor.html">Bifunctor</a>
+in detail in a separate blog post.</p>
+<h2 id="appendix">Appendix</h2>
+<p>Complete program is reproduced below if you want to copy it. ;)</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- app.hs</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE FlexibleContexts           #-}</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad</span>          (forever)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.Except</span>   (<span class="dt">ExceptT</span>, <span class="dt">MonadError</span>, catchError,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                                         runExceptT, throwError)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.IO.Class</span> (<span class="dt">MonadIO</span>, liftIO)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Control.Monad.State</span>    (<span class="dt">MonadState</span>, <span class="dt">StateT</span>, evalStateT, get,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                                         modify)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">Numeric</span>                (readDec)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span>           <span class="dt">System.IO</span>              (<span class="dt">BufferMode</span> (<span class="dt">NoBuffering</span>),</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                                         hSetBuffering, stdout)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="ot">avg ::</span> (<span class="dt">MonadError</span> <span class="dt">String</span> m) <span class="ot">=&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> m <span class="dt">Double</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>avg [] <span class="ot">=</span> throwError <span class="st">&quot;Cannot take average of empty list&quot;</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>avg xs <span class="ot">=</span> <span class="fu">pure</span> <span class="op">$</span> <span class="fu">fromIntegral</span> (<span class="fu">sum</span> xs) <span class="op">/</span> <span class="fu">fromIntegral</span> (<span class="fu">length</span> xs)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span><span class="ot"> ::</span> <span class="dt">MonadError</span> <span class="dt">String</span> m <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> m <span class="dt">Int</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> []       <span class="ot">=</span> throwError <span class="st">&quot;Cannot read int from empty string&quot;</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> (<span class="ch">&#39;-&#39;</span><span class="op">:</span>xs) <span class="ot">=</span> <span class="fu">negate</span> <span class="op">&lt;$&gt;</span> <span class="fu">readInt</span> xs <span class="co">-- Handle negative integers</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="fu">readInt</span> xs       <span class="ot">=</span> <span class="kw">case</span> <span class="fu">readDec</span> xs <span class="kw">of</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  [(v, <span class="st">&quot;&quot;</span>)] <span class="ot">-&gt;</span> <span class="fu">pure</span> v</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>  _         <span class="ot">-&gt;</span> throwError <span class="op">$</span> <span class="st">&quot;Could not parse &quot;</span> <span class="op">&lt;&gt;</span> <span class="fu">show</span> xs <span class="op">&lt;&gt;</span> <span class="st">&quot; to an int&quot;</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">App</span> s m e a <span class="ot">=</span> <span class="dt">App</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>  {<span class="ot"> unapp ::</span> <span class="dt">StateT</span> s (<span class="dt">ExceptT</span> e m) a</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>  } <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadError</span> e, <span class="dt">MonadIO</span>, <span class="dt">MonadState</span> s)</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">MyApp</span> <span class="ot">=</span> <span class="dt">App</span> [<span class="dt">Int</span>] <span class="dt">IO</span> <span class="dt">String</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="ot">runapp ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> s <span class="ot">-&gt;</span> <span class="dt">App</span> s m e a <span class="ot">-&gt;</span> m (<span class="dt">Either</span> e a)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>runapp s <span class="ot">=</span> runExceptT <span class="op">.</span> <span class="fu">flip</span> evalStateT s <span class="op">.</span> unapp</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="ot">getInt&#39; ::</span> <span class="dt">MyApp</span> <span class="dt">Int</span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>getInt&#39; <span class="ot">=</span></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>      liftIO (<span class="fu">putStr</span> <span class="st">&quot;Enter an integer: &quot;</span>)</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>  <span class="op">*&gt;</span>  liftIO <span class="fu">getLine</span></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>  <span class="op">&gt;&gt;=</span> <span class="fu">readInt</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="ot">getInt ::</span> <span class="dt">MyApp</span> <span class="dt">Int</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>getInt <span class="ot">=</span> getInt&#39; <span class="ot">`catchError`</span> \e <span class="ot">-&gt;</span> printError e <span class="op">*&gt;</span> getInt</span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span> printError e <span class="ot">=</span> liftIO <span class="op">$</span> <span class="fu">putStrLn</span> e</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a><span class="ot">go ::</span> <span class="dt">MyApp</span> ()</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>go <span class="ot">=</span> forever <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> getInt</span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>  modify (x<span class="op">:</span>)</span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> avg <span class="op">=&lt;&lt;</span> get</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>  liftIO <span class="op">$</span> <span class="fu">putStrLn</span> <span class="op">$</span> <span class="st">&quot;Current avg: &quot;</span> <span class="op">&lt;&gt;</span> <span class="fu">show</span> y</span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>  hSetBuffering stdout <span class="dt">NoBuffering</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>  runapp [] go <span class="op">&gt;&gt;=</span> <span class="fu">either</span> <span class="fu">print</span> (<span class="fu">const</span> <span class="op">$</span> <span class="fu">pure</span> ())</span></code></pre></div>
+</body>
+</html>

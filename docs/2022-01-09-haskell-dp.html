@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2022-01-09" />
+  <title>Dynamic Programming in Haskell</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Dynamic Programming in Haskell</h1>
+<p class="date">2022-01-09</p>
+</header>
+<p>In today’s post we’ll see how Dynamic Programming algorithms can be
+implemented in Haskell in an idiomatic way.</p>
+<p>The usual way to implement a Dynamic Programming algorithms in a
+traditional programming langugage is to initialize a mutable empty array
+and fill its items one-by-one while reusing older entries. This approach
+is not very compatible with Haskell because the standard data structures
+in Haskell are immutable by default. However, as we will see soon,
+laziness of Haskell data structures comes in really handy for
+implementing Dynamic Programming algorithms and the end result is really
+neat.</p>
+<p>Let’s look at a few Dynamic Programming problems and solve them using
+Haskell.</p>
+<h1 id="compute-the-number-of-ways-to-traverse-a-2d-array">Compute the
+number of ways to traverse a 2D array</h1>
+<p>In this problem we have to write a program that counts the number of
+ways one can go from the top-left cell to the bottom-right cell in a 2D
+array. The only possible moves from a cell are to the right cell and to
+the bottom cell.</p>
+<p><em>I have taken this problem from <a
+href="https://www.amazon.com/Elements-Programming-Interviews-Python-Insiders/dp/1537713949/ref=asc_df_1537713949/?tag=hyprod-20&amp;linkCode=df0&amp;hvadid=312176709100&amp;hvpos=&amp;hvnetw=g&amp;hvrand=3161579212296005143&amp;hvpone=&amp;hvptwo=&amp;hvqmt=&amp;hvdev=c&amp;hvdvcmdl=&amp;hvlocint=&amp;hvlocphy=9003562&amp;hvtargid=pla-312217120756&amp;psc=1&amp;tag=&amp;ref=&amp;adgrpid=60258872537&amp;hvpone=&amp;hvptwo=&amp;hvadid=312176709100&amp;hvpos=&amp;hvnetw=g&amp;hvrand=3161579212296005143&amp;hvqmt=&amp;hvdev=c&amp;hvdvcmdl=&amp;hvlocint=&amp;hvlocphy=9003562&amp;hvtargid=pla-312217120756">Elements
+of Programming Interviews</a> book. They provide code for all the
+problems in the book on Github which I have forked to create a <a
+href="https://github.com/amogh09/EPIJudgeHaskell">Haskell version</a> if
+you are interested!</em></p>
+<p>For example there are 2 ways to traverse a 2x2 array.</p>
+<p>And there are 3 ways to traverse a 2x3 array.</p>
+<p>Similarly there are 70 ways to traverse a 5x5 array.</p>
+<p>This problem breaks down to the following top-down recursive
+structure. There is only one way to traverse an m x 1 array and one way
+to traverse an 1 x n array. For all other m x n arrays the number of
+ways is the sum of ways for (m-1) x n and m x (n-1) arrays.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">ways ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>ways <span class="dv">1</span> _ <span class="ot">=</span> <span class="dv">1</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>ways _ <span class="dv">1</span> <span class="ot">=</span> <span class="dv">1</span> </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>ways m n <span class="ot">=</span> ways (m<span class="op">-</span><span class="dv">1</span>) n <span class="op">+</span> ways m (n<span class="op">-</span><span class="dv">1</span>)</span></code></pre></div>
+<p>Let’s try it in ghci.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">λ</span><span class="op">&gt;</span> :{</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">*Main</span><span class="kw">|</span> <span class="ex">ways</span> :: Int <span class="at">-</span><span class="op">&gt;</span> Int <span class="at">-</span><span class="op">&gt;</span> Int </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">*Main</span><span class="kw">|</span> <span class="ex">ways</span> 1 _ = 1 </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">*Main</span><span class="kw">|</span> <span class="ex">ways</span> _ 1 = 1 </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">*Main</span><span class="kw">|</span> <span class="ex">ways</span> m n = ways <span class="er">(</span><span class="ex">m-1</span><span class="kw">)</span> <span class="ex">n</span> + ways m <span class="er">(</span><span class="ex">n-1</span><span class="kw">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">*Main</span><span class="kw">|</span> <span class="ex">:}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ex">λ</span><span class="op">&gt;</span> ways 2 3</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">3</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ex">λ</span><span class="op">&gt;</span> ways 2 2</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ex">2</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="ex">λ</span><span class="op">&gt;</span> ways 2 3</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="ex">3</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="ex">λ</span><span class="op">&gt;</span> ways 5 5</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="ex">70</span></span></code></pre></div>
+<p>The bottom-up way of solving this problem is by initializing a 2D
+array A of size m x n for storing subproblem results. So, entry A[i][j]
+will contain the number of ways for traversing an array of size (i+1) x
+(j+1). This way the final result of our problem will be the entry
+A[m-1][n-1] and the entries are filled as <code>A[0][_] = 1</code>,
+<code>A[_][0] = 1</code>, and
+<code>A[i][j] = A[i-1][j] + A[i][j-1]</code>.</p>
+<p>In Python we can implement this as follows.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> number_of_ways(n, m):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> [[<span class="dv">0</span>]<span class="op">*</span>n <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(m)]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(m):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(n):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            A[i][j] <span class="op">=</span> <span class="dv">1</span> <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span> <span class="kw">or</span> j <span class="op">==</span> <span class="dv">0</span> <span class="cf">else</span> A[i<span class="op">-</span><span class="dv">1</span>][j] <span class="op">+</span> A[i][j<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> A[m<span class="op">-</span><span class="dv">1</span>][n<span class="op">-</span><span class="dv">1</span>]</span></code></pre></div>
+<p>In Haskell we can implement the same idea using Lists! The key is
+that laziness allows us to create a data structure using itself. We will
+compute the dynamic programming table row by row starting from the first
+row that is <code>[1,1...,1]</code>. Subsquent rows can be computed
+using the previous row (A[i-1][j]) and the row being computed itself
+(A[i][j-1]). Once this table is computed the result is the value of the
+last cell (A[m-1][n-1]).</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">numberOfWays ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>numberOfWays m n <span class="ot">=</span> <span class="fu">last</span> <span class="op">$</span> <span class="fu">last</span> table <span class="co">-- Result is the value of the last cell</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- table is computed as first row [1,1,..,1] followed by subsequent </span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- rows. Each subsequent row requires the previous row for its </span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- computation. We get the (m-1) previous rows by performing list </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- comprehension over the table itself.</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ot">        table ::</span> [[<span class="dt">Int</span>]]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        table <span class="ot">=</span> <span class="fu">replicate</span> n <span class="dv">1</span> <span class="op">:</span> [ row prev <span class="op">|</span> prev <span class="ot">&lt;-</span> <span class="fu">take</span> (m <span class="op">-</span> <span class="dv">1</span>) table ]</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- row function computes the next row of the table.</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- The next row starts with 1 (A[i][1]) followed by entries that </span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- are the sum of the entry directly above it (A[i-1][j]) and the </span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- entry left to it (A[i][j-1]). These entries are provided by </span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- a list comprehension over the row being computed and the tail</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- (because the first entry is always 1) of the previous row.</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="ot">        row ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> [<span class="dt">Int</span>]</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        row prev <span class="ot">=</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            <span class="kw">let</span> r <span class="ot">=</span> <span class="dv">1</span> <span class="op">:</span> [ left <span class="op">+</span> top <span class="op">|</span> (left, top) <span class="ot">&lt;-</span> <span class="fu">zip</span> r (<span class="fu">tail</span> prev) ]</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>            <span class="kw">in</span> r</span></code></pre></div>
+<p>This implementation is very quick in practice and easily competes
+with traditional implementations in traditional languages.</p>
+<p>This approach easily extends to dynamic programming problems of all
+sorts. If you need to lookup results to subproblems at arbitrary
+locations then you can consider using <a
+href="https://hackage.haskell.org/package/vector-0.12.3.1/docs/Data-Vector.html">Vectors</a>
+instead of Lists. You can generate Vectors lazily using the
+<code>generate</code> function. Let’s see this in action using another
+example problem.</p>
+<h1 id="number-of-score-combinations">Number of score combinations</h1>
+<p>In this problem we have to compute the number of combinations of
+individual plays/points that sum up to a given score. For example, there
+are 4 ways to combine plays/points from [2, 3, 7] to create a score of
+12. These ways are - * 2 x 6, * 2 x 3 + 3 x 2, * 3 x 4, and * 2 x 1 + 3
+x 1 + 7 x 1.</p>
+<p>The top-down recursive structure of this problem is straightforward.
+There are - * no ways to form a score with no plays, * no ways to form a
+negative score, * one way to form a score of zero, and * the sum of
+number of ways to form the score without using the first play and number
+of ways to form the score using the first play at least once.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ot">numCombs ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>numCombs _ []        <span class="ot">=</span> <span class="dv">0</span> <span class="co">-- No ways as no plays available</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>numCombs score plays </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> score <span class="op">&lt;</span> <span class="dv">0</span>  <span class="ot">=</span> <span class="dv">0</span> <span class="co">-- No ways to form a negative score</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> score <span class="op">==</span> <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span> <span class="co">-- One way to form a score of 0 (use no plays)</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="fu">otherwise</span>  <span class="ot">=</span> </span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        numCombs score (<span class="fu">tail</span> plays)         <span class="co">-- Ways to form the score without the first play</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      <span class="op">+</span> numCombs (score <span class="op">-</span> <span class="fu">head</span> plays) plays <span class="co">-- Ways to form the score with the first play used at least once</span></span></code></pre></div>
+<p>A bottom-up approach is to create a table A of size
+<code>(length plays) x score</code> where <code>A[i][j]</code> is the
+number of combinations that sum up to a score of <code>j</code> using
+the first <code>i</code> plays. Then our final result will be the value
+of <code>A[length(plays)][score]</code>.</p>
+<p>In Python we can implement this as follows.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> num_combs(score, plays):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> <span class="bu">len</span>(plays)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> score</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> [ [<span class="dv">0</span>]<span class="op">*</span>(n<span class="op">+</span><span class="dv">1</span>) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(m<span class="op">+</span><span class="dv">1</span>) ]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(m<span class="op">+</span><span class="dv">1</span>):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(n<span class="op">+</span><span class="dv">1</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                A[i][j] <span class="op">=</span> <span class="dv">0</span> </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> j <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                A[i][j] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">else</span>:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                p <span class="op">=</span> plays[i<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                A[i][j] <span class="op">=</span> A[i<span class="op">-</span><span class="dv">1</span>][j] <span class="op">+</span> (<span class="dv">0</span> <span class="cf">if</span> j <span class="op">&lt;</span> p <span class="cf">else</span> A[i][j<span class="op">-</span>p])</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> A[m][n]</span></code></pre></div>
+<p>Since we need <code>A[i][j-p]</code>, where p is known only at
+runtime, for computing <code>A[i][j]</code>, we’d be better of using
+Vectors over Lists in our Haskell implementation as Vectors allow
+efficient lookups at arbitrary indices. So, our table will be of type
+<code>[Vector Int]</code>. As before, the table will be computed lazily
+using itself and each vector in the table will be computed using the
+previous vector in the table and the vector itself.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ot">numCombs ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>numCombs score plays <span class="ot">=</span> V.last <span class="op">$</span> <span class="fu">last</span> table <span class="co">-- Last entry in the table i.e. A[m][n]</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- The first row in the table is [0,0,..,0] as there are no available </span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- plays. Row i is computed using its previous row (i-1) and the ith</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- play.</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="ot">        table ::</span> [<span class="dt">Vector</span> <span class="dt">Int</span>]</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        table <span class="ot">=</span> V.replicate (score <span class="op">+</span> <span class="dv">1</span>) <span class="dv">0</span> <span class="op">:</span> (<span class="fu">uncurry</span> row <span class="op">&lt;$&gt;</span> <span class="fu">zip</span> plays table)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- Next row is a Vector whose first entry is 1 followed by entries </span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- computed using entries from the previous row (A[i-1][j]) and </span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- already computed entries in the same row (A[i][j-p]).</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="ot">        row ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Vector</span> <span class="dt">Int</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        row p prev <span class="ot">=</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">let</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                r      <span class="ot">=</span> V.generate (score <span class="op">+</span> <span class="dv">1</span>) cell</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                cell <span class="dv">0</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                cell j <span class="ot">=</span> prev <span class="op">V.!</span> j <span class="op">+</span> <span class="kw">if</span> j <span class="op">&gt;=</span> p <span class="kw">then</span> r <span class="op">V.!</span> (j <span class="op">-</span> p) <span class="kw">else</span> <span class="dv">0</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            <span class="kw">in</span> r</span></code></pre></div>
+</body>
+</html>

@@ -4,7 +4,6 @@ title: Dynamic Programming in Haskell
 date: 2022-01-09
 tags: haskell algorithms dynamic-programming
 ---
-![Dynamic programming](/assets/dp/matrix_banner.gif)
 
 In today's post we'll see how Dynamic Programming algorithms can be implemented in Haskell in an idiomatic way. 
 
@@ -18,10 +17,8 @@ In this problem we have to write a program that counts the number of ways one ca
 *I have taken this problem from [Elements of Programming Interviews](https://www.amazon.com/Elements-Programming-Interviews-Python-Insiders/dp/1537713949/ref=asc_df_1537713949/?tag=hyprod-20&linkCode=df0&hvadid=312176709100&hvpos=&hvnetw=g&hvrand=3161579212296005143&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9003562&hvtargid=pla-312217120756&psc=1&tag=&ref=&adgrpid=60258872537&hvpone=&hvptwo=&hvadid=312176709100&hvpos=&hvnetw=g&hvrand=3161579212296005143&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9003562&hvtargid=pla-312217120756) book. They provide code for all the problems in the book on Github which I have forked to create a [Haskell version](https://github.com/amogh09/EPIJudgeHaskell) if you are interested!*
 
 For example there are 2 ways to traverse a 2x2 array.
-![2x2](/assets/dp/dp_2x2.jpg)
 
 And there are 3 ways to traverse a 2x3 array.
-![2x2](/assets/dp/dp_2x3.jpg)
 
 Similarly there are 70 ways to traverse a 5x5 array.
 

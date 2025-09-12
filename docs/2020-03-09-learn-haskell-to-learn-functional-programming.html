@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2020-03-09" />
+  <title>Learn Haskell to learn Functional Programming</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Learn Haskell to learn Functional Programming</h1>
+<p class="date">2020-03-09</p>
+</header>
+<p>Haskell is a great language. It pioneers functional programming and
+enforces it. If you want to learn functional programming you should
+seriously consider learning it through Haskell. Let’s go through some of
+Haskell’s features to see what makes it special.</p>
+<h2 id="immutability">Immutability</h2>
+<p>You might be aware that we don’t mutate data in functional
+programming. Once a value is defined it stays its same self throughout
+its existence. That is, once <code>let name = "fpunfold"</code> has been
+declared, <code>name</code> can never be set to anything else. It’s what
+is called a constant in some languages.</p>
+<p>Haskell enforces immutability and there’s no way to mutate any data
+after its declaration. This forces you to learn about dealing with data
+in a functional style which is a crucial step in your quest to learn
+functional programming.</p>
+<h2 id="syntax">Syntax</h2>
+<p>Haskell offers beautiful syntax (that it borrows from mathematics)
+for fundamental concepts in functional programming. For example,
+function composition is written as <code>f . g</code> in mathematics as
+well as in Haskell. As you might tell, <code>(f . g) (x)</code> applies
+function <code>f</code> to the result of <code>g(x)</code>.</p>
+<pre><code>λ&gt; let f x = x + 3
+λ&gt; let g x = x * 2
+λ&gt; (f . g) (1)
+5</code></pre>
+<p>Ability to compose functions using a dot opens door for a “Pointfree”
+style of coding. Pointfree style of coding lets the programmer skip
+specifying parameters to functions when composing them. This removes the
+ugly nested parentheses from the code and improves readability. I think
+Pointfree code looks beautiful.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> fn x <span class="ot">=</span> f(g(h(x))) <span class="co">-- Pointful</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> fn <span class="ot">=</span> f <span class="op">.</span> g <span class="op">.</span> h    <span class="co">-- Pointfree, notice that parameter x is skipped</span></span></code></pre></div>
+<h2 id="function-purity">Function purity</h2>
+<p>Haskell has a clear separation between pure functions and impure
+functions. A pure function is a function whose value is deterministic
+and depends solely on its inputs. Mathematical functions are pure. For
+example, <code>add 2 2</code> always equals <code>4</code>,
+<code>sqrt 4</code> always equals <code>2</code>, and so on. Contrast
+this with Python’s <code>random.random()</code> function which returns a
+nondeterministic value on each call and is thus not pure (impure). A
+simple way to tell if a function is impure is to check if the function
+has a side-effect outside of its scope. For example, Python’s
+<code>random.random()</code> function implicitly mutates the global
+state of Python runtime’s random number generator whenever it is called.
+You can check the current state of the random number generator in Python
+using the <code>random.getstate()</code> function. Call it before and
+after calling <code>random.random()</code> and you’d see that the state
+has changed.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Python shell</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> stbefore <span class="op">=</span> random.getstate()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> random.random()</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.5207680388690307</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> stafter <span class="op">=</span> random.getstate()</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> stbefore <span class="op">==</span> stafter</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code></pre></div>
+<p>Note that all IO operations such as writing to a file, reading from a
+database, etc. are impure as they cause side-effects and are
+nondeterministic.</p>
+<p>Pure functions are great because they are deterministic and thus
+easier to reason, debug, and test. In a typical program, most of the
+logic is pure and if we separate it from impure bits of the program, our
+program as a whole becomes easier to follow, debug, and test.</p>
+<p>In Functional programming, we try to keep as many of our functions
+pure as possible. In Haskell all functions are by default pure and to
+make a function impure you need to mark it so. This separation is done
+using a computational context called the <code>IO</code> monad. Think of
+<code>IO</code> monad as an interface that offers impure functions to
+make side effects.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- whyhaskell.hs</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">pureAdd ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>pureAdd x y <span class="ot">=</span> x <span class="op">+</span> y</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ot">impureAdd ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Int</span> <span class="co">-- Result is marked as involving IO</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>impureAdd x y <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">putStrLn</span> (<span class="st">&quot;I am adding &quot;</span> <span class="op">++</span> <span class="fu">show</span> x <span class="op">++</span> <span class="st">&quot; and &quot;</span> <span class="op">++</span> <span class="fu">show</span> y)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span> (x <span class="op">+</span> y)</span></code></pre></div>
+<pre><code>-- ghci (Haskell shell)
+λ&gt; :l whyhaskell.hs 
+[1 of 1] Compiling Main             ( whyhaskell.hs, interpreted )
+Ok, one module loaded.
+λ&gt; pureAdd 2 2
+4
+λ&gt; impureAdd 2 2
+I am adding 2 and 2
+4</code></pre>
+<p>Thus, coding in Haskell teaches you to properly separate pure and
+impure bits of your program from each other. This is useful not only to
+learn functional programming but to write easily tested code when using
+other paradigms too.</p>
+<h2 id="currying">Currying</h2>
+<p>Another core concept of functional programming is Currying. Let’s see
+what Currying means using an example. The familiar way of defining a
+function with multiple arguments is by taking the arguments at once in a
+single tuple.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># whyhaskell.py</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sayHello(greeting, name):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> greeting <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> name <span class="op">+</span> <span class="st">&quot;!&quot;</span></span></code></pre></div>
+<p>With Currying, instead of making the function take multiple arguments
+at once in a single tuple, we take the arguments one-by-one, in order.
+As the function accepts an argument it returns a new function that takes
+one less parameter. This has tremendous implications on code reuse as
+shown in the Haskell example below. Haskell evaluates all functions
+using Currying.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- whyhaskell.hs</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">sayGreeting ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>sayGreeting greeting name <span class="ot">=</span> greeting <span class="op">++</span> <span class="st">&quot; &quot;</span> <span class="op">++</span> name <span class="op">++</span> <span class="st">&quot;!&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Now we define three new functions with different greetings</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>sayHello <span class="ot">=</span> sayGreeting <span class="st">&quot;Hello&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>sayHi <span class="ot">=</span> sayGreeting <span class="st">&quot;Hi&quot;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>sayYo <span class="ot">=</span> sayGreeting <span class="st">&quot;Yo&quot;</span></span></code></pre></div>
+<pre><code>-- ghci (Haskell shell)
+λ&gt; :l whyhaskell.hs 
+[1 of 1] Compiling Main             ( whyhaskell.hs, interpreted )
+Ok, one module loaded.
+λ&gt; sayHello &quot;fpunfold&quot;
+&quot;Hello fpunfold!&quot;
+λ&gt; sayHi &quot;fpunfold&quot;
+&quot;Hi fpunfold!&quot;
+λ&gt; sayYo &quot;fpunfold&quot;
+&quot;Yo fpunfold!&quot;</code></pre>
+<h2 id="algebraic-data-types">Algebraic Data Types</h2>
+<p>Functional programming makes heavy use of Algebraic Data Types. These
+are types that are composed of one or more other types and can be
+decomposed to perform pattern matching. User defined data types in
+Haskell are Algebraic thus teaching you another core concept of
+Functional programming well. See post on
+<a href="https://fpunfold.com/2020/05/10/algebraic-data-type/">Algebraic
+Data Type</a> to learn more about them.</p>
+<h2 id="typeclasses-and-types">Typeclasses and Types</h2>
+<p>Functional programming makes use of many concepts such as Functors,
+Applicatives, Monads, etc. Each of these concepts have some useful
+properties that simplify programs. Haskell comes with carefully designed
+built-in typeclasses that correspond to these concepts. Typeclasses
+declare an interface and types adhering to any typeclasses can be
+interacted with the interface declared by those typeclasses. You can
+think of typeclasses as Java interfaces.</p>
+<p>To learn functional programming you’d need to learn about some common
+data types used by functional programmers. Haskell comes with a myriad
+of such data types. Types such as List, Map, Maybe, Either, State,
+Reader, Writer, and Zipper adhere to the functional way of thinking and
+force you to think in a functional way.</p>
+<h2 id="summary">Summary</h2>
+<p>Learning Haskell is one of the most effective ways to learn
+functional programming. The only way to code in Haskell is the
+functional way so it forces you to think in functional style. The
+language also represents the state of the art in programming language
+theory and the discipline it brings with it will make you not just a
+good functional programmer but a good programmer in general.</p>
+</body>
+</html>
